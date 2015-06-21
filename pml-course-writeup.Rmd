@@ -54,21 +54,21 @@ Now, let's calculate the out of sample error rate, or misclassification rate, fo
 
 ```{r error-rate, cache=TRUE}
 trainingPredictions <- predict(modFit, training)
-trainingAccuracy <- confusionMatrix(training$classe,trainingPredictions)["Accuracy"]
+trainingConfusionMatrix <- confusionMatrix(training$classe,trainingPredictions)
+trainingAccuracy <- trainingConfusionMatrix$overall["Accuracy"]
 errorRateTraining <- 1 - trainingAccuracy;
 ```
 
-The misclassification error rate on the training set itself is `errorRateTraining`. Which is pretty low for out first model exploration, and so we will keep this model. 
-
-Of course, this is an optimistic error rate, since the model might be overfitting on the training data. Consequently, the real error rate should be higher. Let's find out the error rate on the testing data set we set aside at the beginning.
+The misclassification error rate on the training set itself is `r errorRateTraining`. Which is to say they model is perfectly fitting it's own training data. Of course, this is an optimistic error rate, since the model is surely overfitting on the training data. Consequently, the real error rate should be higher. Let's find out the error rate on the testing data set we set aside at the beginning.
 
 ```{r error-rate-testing, cache=TRUE}
 testingPredictions <- predict(modFit, testing)
-testingAccuracy <- confusionMatrix(testing$classe,testingPredictions)["Accuracy"]
+testingConfusionMatrix <- confusionMatrix(testing$classe,testingPredictions)
+testingAccuracy <- testingConfusionMatrix$overall[["Accuracy"]]
 errorRateTesting <- 1 - testingAccuracy
 ```
 
-Our error rate is now `errorRateTesting`, which is indeed higher than the error rate from the training set.
+Our error rate is now `r errorRateTesting`, which is indeed higher (and more realistic!) than the error rate from the training set.
 
 # Conclusion
 It looks like the accelerator data can be used to classify accurately how a physical training exercise is performed.
