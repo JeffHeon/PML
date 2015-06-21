@@ -1,0 +1,74 @@
+---
+title: "PML Training Writeup"
+author: "Jean-François Héon"
+date: "June 21, 2015"
+output: html_document
+---
+```{r libraries, echo=FALSE}
+library(caret)
+```
+
+# Summary
+The goal of this writeup is to see how we can get prediction of the correctness of execution of physical training activity.
+
+We have accelerometers data gathered from 6 participants engaging in different weight lifting exercises. There is a classe column in the dataset which identifies how well the exercice has been executed. More detail about the dataset can be found here <http://groupware.les.inf.puc-rio.br/har>.
+
+# Data cleaning
+
+We will load the data and do a little bit of cleaning. 
+
+```{r getting-data, cache=TRUE}
+# Human Activity Recognition
+harData <- read.csv("pml-training.csv", stringsAsFactors=FALSE, na.strings="NA")
+```
+
+Exploring the data suggest these columns beginning with these terms have the bulk of the accelerometers data:
+Roll, pitch, yaw, total_accel, accel, magnet.
+We will keep these columns plus of course the classe column, which we need to train our algorithm.
+
+```{r cleaning-data, cache=TRUE}
+cleanData = harData[grepl("^classe|^roll|^pitch|^yaw|^accel|^magnet|^gyros|^classe", colnames(harData))]
+cleanData$classe = factor(cleanData$classe)
+```
+
+# Preparing data
+Set a seed for reproducibility of data
+```{r seed, cache=TRUE}
+set.seed(3117)
+```
+
+Let's divide between training and testing set. Since it is a very large dataset, we'll use only 20% for the training set to shorten the training time.
+```{r prep-data, cache=TRUE}
+inTrain <- createDataPartition(cleanData$classe, p=0.2, list=FALSE)
+training = cleanData[ inTrain,]
+testing = cleanData[-inTrain,]
+```
+
+# Training the model
+We'll start with a simple random forest because they are easy to interpret and have good performance in non-linear settings.
+```{r train, cache=TRUE}
+modFit <- train(classe ~ ., method="rf",data=training,verbose=FALSE)
+```
+
+Now, let's calculate the out of sample error rate, or misclassification rate, for our predictions on the training set. The misclassificatio rate is 1 minus the accuracy, which we can obtain via the confusion matrix.
+
+```{r error-rate, cache=TRUE}
+trainingPredictions <- predict(modFit, training)
+trainingAccuracy <- confusionMatrix(training$classe,trainingPredictions)["Accuracy"]
+errorRateTraining <- 1 - trainingAccuracy;
+```
+
+The misclassification error rate on the training set itself is `errorRateTraining`. Which is pretty low for out first model exploration, and so we will keep this model. 
+
+Of course, this is an optimistic error rate, since the model might be overfitting on the training data. Consequently, the real error rate should be higher. Let's find out the error rate on the testing data set we set aside at the beginning.
+
+```{r error-rate-testing, cache=TRUE}
+testingPredictions <- predict(modFit, testing)
+testingAccuracy <- confusionMatrix(testing$classe,testingPredictions)["Accuracy"]
+errorRateTesting <- 1 - testingAccuracy
+```
+
+Our error rate is now `errorRateTesting`, which is indeed higher than the error rate from the training set.
+
+# Conclusion
+It looks like the accelerator data can be used to classify accurately how a physical training exercise is performed.
